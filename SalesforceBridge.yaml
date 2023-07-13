@@ -1,0 +1,51 @@
+$integration: http://ibm.com/appconnect/integration/v2/integrationFile
+integration:
+  type: trigger-action
+  trigger-interfaces:
+    trigger-interface-1:
+      connector-type: salesforce
+      type: event-trigger
+      triggers:
+        CREATED:
+          input-context:
+            data: MQ_Event__e
+          assembly:
+            $ref: '#/integration/assemblies/assembly-1'
+          options:
+            subscription: {}
+      account-name: Account 1
+  action-interfaces:
+    action-interface-1:
+      type: api-action
+      business-object: message
+      connector-type: mq
+      actions:
+        PUTMESSAGE: {}
+      account-name: Account 1
+  assemblies:
+    assembly-1:
+      assembly:
+        execute:
+          - custom-action:
+              name: IBM MQ Put message on a queue
+              target:
+                $ref: '#/integration/action-interfaces/action-interface-1'
+              action: PUTMESSAGE
+              map:
+                mappings:
+                  - message:
+                      template: '{{$Trigger.Name__c}} and {{$Trigger.Phone__c}}'
+                  - messageType:
+                      template: TEXT
+                  - queueName:
+                      template: APPQ
+                $map: http://ibm.com/appconnect/map/v1
+                input:
+                  - variable: Trigger
+                    $ref: '#/trigger/payload'
+                  - variable: flowDetails
+                    $ref: '#/flowDetails'
+        tags:
+          - incomplete
+  name: SalesforceBridge
+models: {}
